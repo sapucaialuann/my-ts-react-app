@@ -1,23 +1,63 @@
-import { useState } from "react"
+import { useEffect, useState } from "react";
+import { fetchQuestions } from "../../services/api";
 
-export const useQuestionHelper = (indexOfQuestions: number) => {
-  const [rightAnswerCount, setRightAnswerCount] = useState(0);
-  let answers = new Array(indexOfQuestions);
+interface Question {
+   id: string;
+   required: boolean;
+   title: string;
+   options: string[];
+   answer: string;
+}
 
+export const useQuizHelper = () => {
+   const [questionsData, setQuestionsData] = useState<Question[]>([]);
+   const [rightAnswersCount, setRightAnswersCount] = useState(0);
+   const [selectedAnswers, setSelectedAnswers] = useState<string[]>(
+      () => Array.from({ length: questionsData.length }, () => "")
+   );
+   const [isFormFinished, setIsFormFinished] = useState(false);
 
-  const checkRightAnswer = (rightAlternative: string, selectedAlternative: string, currentIndex: number) => {
-    if (rightAlternative === selectedAlternative){ 
-        updateCount(true)
-        answers[currentIndex] = true
-        console.log(rightAlternative)
-    } else updateCount(false)
-  }
+   useEffect(() => {
+      const fetchData = async () => {
+         try {
+            const data = await fetchQuestions();
+            setQuestionsData(data);
+            setSelectedAnswers(Array.from({ length: data.length }, () => ""));
+         } catch (error) {
+            console.error("Error fetching:", error);
+         }
+      };
 
-  const updateCount = (isRightAnswer: boolean) => {
-     if (isRightAnswer) {
-        setRightAnswerCount(rightAnswerCount + 1)
-     }
-     else if (!isRightAnswer && rightAnswerCount > 0) setRightAnswerCount(rightAnswerCount - 1)
-  } 
+      fetchData();
+   }, []);
 
-  return {rightAnswerCount, checkRightAnswer}}
+   const handleOptionChange = (
+      questionIndex: number,
+      selectedOption: string
+   ) => {
+      const newSelectedAnswers = [...selectedAnswers]; //copy of array
+      newSelectedAnswers[questionIndex] = selectedOption;
+      setSelectedAnswers(newSelectedAnswers); //set the copy as new array
+   };
+
+   const checkAnswers = () => {
+      let count = 0;
+
+      questionsData.forEach((question, index) => {
+         if (selectedAnswers[index] === question.answer) {
+            count++;
+         }
+      });
+
+      setRightAnswersCount(count);
+      setIsFormFinished(true);
+   };
+
+   const areAllRequiredQuestionsAnswered = () => {
+      return questionsData.every(
+         (question, index) => !question.required || selectedAnswers[index] !== ""
+      );
+   };
+
+   return { questionsData, selectedAnswers, rightAnswersCount, handleOptionChange, checkAnswers, areAllRequiredQuestionsAnswered, isFormFinished }
+}

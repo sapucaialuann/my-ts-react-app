@@ -1,64 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import styled from "styled-components";
-import { fetchQuestions } from "../../services/api";
-
-interface Question {
-  id: string;
-  required: boolean;
-  title: string;
-  options: string[];
-  answer: string;
-}
+import { useQuizHelper } from "./quiz.helper";
 
 const Quiz: React.FC = () => {
-  const [questionsData, setQuestionsData] = useState<Question[]>([]);
-  const [selectedAnswers, setSelectedAnswers] = useState<string[]>(
-    Array(4).fill("")
-  );
-  const [rightAnswersCount, setRightAnswersCount] = useState(0);
-  const [isFormFinished, setIsFormFinished] = useState(false);
-  const [requiredFilled, setRequiredFilled] = useState(false);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await fetchQuestions();
-        setQuestionsData(data);
-      } catch (error) {
-        console.error("Error fetching:", error);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  const handleOptionChange = (
-    questionIndex: number,
-    selectedOption: string
-  ) => {
-    const newSelectedAnswers = [...selectedAnswers]; //copy of array
-    newSelectedAnswers[questionIndex] = selectedOption;
-    setSelectedAnswers(newSelectedAnswers); //set the copy as new array
-  };
-
-  const checkAnswers = () => {
-    let count = 0;
-
-    questionsData.forEach((question, index) => {
-      if (selectedAnswers[index] === question.answer) {
-        count++;
-      }
-    });
-
-    setRightAnswersCount(count);
-    setIsFormFinished(true);
-  };
-
-  const areAllRequiredQuestionsAnswered = () => {
-    return questionsData.every(
-      (question, index) => !question.required || selectedAnswers[index] !== ""
-    );
-  };
+  const {
+    questionsData,
+    selectedAnswers,
+    rightAnswersCount,
+    handleOptionChange,
+    checkAnswers,
+    areAllRequiredQuestionsAnswered,
+    isFormFinished,
+  } = useQuizHelper();
 
   return (
     <S.QuizContainer>
